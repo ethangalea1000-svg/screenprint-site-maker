@@ -17,7 +17,7 @@ export function LessonSession() {
 
   useEffect(() => setUser(loadUser()), []);
 
-  const ex = EXERCISE_TEMPLATES[index];
+  const ex = EXERCISE_TEMPLATES[index]!;
   const total = EXERCISE_TEMPLATES.length;
   const progress = ((index + (status === "correct" || status === "wrong" ? 1 : 0)) / total) * 100;
   const hasAnswer = ex.type === "MCQ" ? choice !== null : selectedWords.length > 0;

@@ -11,7 +11,7 @@ describe("lesson rules", () => {
     expect(endSession(DEFAULT_USER, 3, "2026-10-20").total_xp).toBe(30);
   });
   it("reorder checks word order", () => {
-    const ex = EXERCISE_TEMPLATES[1];
+    const ex = EXERCISE_TEMPLATES[1]!;
     expect(isCorrect(ex, ["I", "eat", "bread"])).toBe(true);
     expect(isCorrect(ex, ["eat", "I", "bread"])).toBe(false);
   });
