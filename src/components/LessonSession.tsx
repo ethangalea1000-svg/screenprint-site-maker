@@ -35,7 +35,7 @@ export function LessonSession() {
 
   const check = () => {
     if (!user) return;
-    const answer = ex.type === "MCQ" ? choice! : selectedWords.map((i) => ex.options[i]);
+    const answer = ex.type === "MCQ" ? choice! : selectedWords.map((i) => ex.options[i]!);
     if (isCorrect(ex, answer)) { setStatus("correct"); setCorrectCount((c) => c + 1); }
     else { setStatus("wrong"); update(loseHeart(user)); }
   };
