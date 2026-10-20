@@ -1,16 +1,66 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { LessonSession } from "@/components/LessonSession";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Check, Flame, Heart, Lock, Star, Zap } from "lucide-react";
+import { EXERCISE_TEMPLATES, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Lingo — Apprends l'anglais en jouant" },
-      { name: "description", content: "Leçons courtes avec QCM et phrases à reconstruire, cœurs, XP et série de jours." },
-      { property: "og:title", content: "Lingo — Apprends l'anglais en jouant" },
-      { property: "og:description", content: "Leçons courtes avec QCM et phrases à reconstruire, cœurs, XP et série de jours." },
+      { title: "Langue — Apprends l'anglais en jouant" },
+      { name: "description", content: "Ton parcours d'anglais : leçons courtes, cœurs, XP et série de jours." },
+      { property: "og:title", content: "Langue — Apprends l'anglais en jouant" },
+      { property: "og:description", content: "Ton parcours d'anglais : leçons courtes, cœurs, XP et série de jours." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: LessonSession,
+  component: Home,
 });
+
+function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => setUser(loadUser()), []);
+  const done = (user?.lessons_completed ?? 0) > 0;
+
+  return (
+    <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
+      <header className="flex items-center justify-between gap-3 py-5">
+        <span className="text-2xl font-black text-primary">Langue</span>
+        {user && (
+          <div className="flex shrink-0 items-center gap-4">
+            <span aria-label={`Série : ${user.streak_days} jours`} className="flex items-center gap-1 font-black text-flame"><Flame aria-hidden className="size-5 fill-current" />{user.streak_days}</span>
+            <span aria-label={`${user.total_xp} XP`} className="flex items-center gap-1 font-black text-xp"><Zap aria-hidden className="size-5 fill-current" />{user.total_xp}</span>
+            <span aria-label={`${user.current_hearts} cœurs`} className="flex items-center gap-1 font-black text-heart"><Heart aria-hidden className="size-5 fill-current" />{user.current_hearts}</span>
+          </div>
+        )}
+      </header>
+
+      <main className="flex-1 pb-12">
+        <section className="btn-3d mb-10 border-primary-shade bg-primary p-5 text-primary-foreground">
+          <p className="text-sm font-extrabold uppercase opacity-90">Unité 1 · Les bases</p>
+          <h1 className="mt-1 text-2xl font-black">Premiers mots en anglais</h1>
+          <p className="mt-1 font-bold opacity-90">Objectif du jour : terminer une leçon ({EXERCISE_TEMPLATES.length} exercices).</p>
+        </section>
+
+        <ol className="flex flex-col items-center gap-8" aria-label="Parcours de l'unité 1">
+          <li className="flex flex-col items-center gap-3">
+            <Link to="/lecon" aria-label={done ? "Leçon 1, terminée — refaire" : "Leçon 1, disponible — commencer"}
+              className={`btn-3d grid size-20 place-items-center rounded-full ${done ? "border-xp bg-xp text-primary-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
+              {done ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
+            </Link>
+            <span className="font-black">Leçon 1 · Mots du quotidien</span>
+            <Link to="/lecon" className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
+              {done ? "Refaire la leçon" : "Commencer"}
+            </Link>
+          </li>
+          <li className="flex flex-col items-center gap-3 text-muted-foreground" aria-label="Leçon 2, pas encore disponible">
+            <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted">
+              <Lock aria-hidden className="size-8" />
+            </div>
+            <span className="font-black">Leçon 2 · Bientôt disponible</span>
+          </li>
+        </ol>
+      </main>
+    </div>
+  );
+}
