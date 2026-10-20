@@ -79,20 +79,20 @@ export function LessonSession() {
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
       <header className="flex items-center gap-4 py-6">
-        <button onClick={restart} aria-label="Recommencer" className="text-muted-foreground"><X /></button>
-        <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={Math.round(progress)}>
+        <button onClick={restart} aria-label="Recommencer" className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></button>
+        <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Progression de la leçon" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
           <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
         </div>
-        <span className="flex items-center gap-1 font-black text-flame"><Flame className="size-5 fill-current" />{user.streak_days}</span>
-        <span className="flex items-center gap-1 font-black text-xp"><Zap className="size-5 fill-current" />{user.total_xp}</span>
-        <span className="flex items-center gap-1 font-black text-heart"><Heart className="size-5 fill-current" />{user.current_hearts}</span>
+        <span aria-label={`Série : ${user.streak_days} jours`} className="flex items-center gap-1 font-black text-flame"><Flame aria-hidden className="size-5 fill-current" />{user.streak_days}</span>
+        <span aria-label={`${user.total_xp} XP`} className="flex items-center gap-1 font-black text-xp"><Zap aria-hidden className="size-5 fill-current" />{user.total_xp}</span>
+        <span aria-label={`${user.current_hearts} cœurs`} className="flex items-center gap-1 font-black text-heart"><Heart aria-hidden className="size-5 fill-current" />{user.current_hearts}</span>
       </header>
 
       <main className="flex-1 py-6">
         <p className="mb-2 text-sm font-extrabold uppercase text-muted-foreground">
           {ex.type === "MCQ" ? "Choix unique" : "Remets les mots dans l'ordre"}
         </p>
-        <h2 className="mb-8 text-2xl font-black">{ex.question}</h2>
+        <h1 className="mb-8 text-2xl font-black">{ex.question}</h1>
 
         {ex.type === "MCQ" ? (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -121,7 +121,7 @@ export function LessonSession() {
 
       <footer className={`-mx-4 border-t-2 px-4 py-6 ${status === "correct" ? "border-success bg-success-soft" : status === "wrong" ? "border-danger bg-danger-soft" : "border-border"}`}>
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="font-black">
+          <div className="font-black" role="status" aria-live="polite">
             {status === "correct" && <span className="text-success-shade text-xl">Excellent !</span>}
             {status === "wrong" && (
               <span className="text-danger-shade">
@@ -143,12 +143,12 @@ export function LessonSession() {
       </footer>
 
       {outOfHearts && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-6">
+        <div role="dialog" aria-modal="true" aria-labelledby="no-hearts-title" className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/60 p-6">
           <div className="w-full max-w-sm rounded-3xl bg-background p-8 text-center">
             <Heart className="mx-auto mb-4 size-16 fill-heart text-heart" />
-            <h3 className="mb-2 text-2xl font-black">Plus de cœurs !</h3>
+            <h2 id="no-hearts-title" className="mb-2 text-2xl font-black">Plus de cœurs !</h2>
             <p className="mb-6 text-muted-foreground">Recharge tes vies pour continuer la leçon.</p>
-            <button onClick={() => update({ ...user, current_hearts: MAX_HEARTS })}
+            <button autoFocus onClick={() => update({ ...user, current_hearts: MAX_HEARTS })}
               className="btn-3d w-full border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
               Recharger ({MAX_HEARTS} cœurs)
             </button>
