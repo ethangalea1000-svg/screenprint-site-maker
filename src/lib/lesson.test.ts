@@ -16,4 +16,12 @@ describe("lesson rules", () => {
     expect(isCorrect(ex, ["eat", "I", "bread"])).toBe(false);
   });
   it("has 5 exercises", () => expect(EXERCISE_TEMPLATES).toHaveLength(5));
+  it("every exercise explains its answer after a mistake", () => {
+    for (const ex of EXERCISE_TEMPLATES) expect(ex.explanation?.length ?? 0).toBeGreaterThan(0);
+  });
+  it("streak +1 next day, reset after a gap", () => {
+    const u = { ...DEFAULT_USER, streak_days: 3, last_active: "2026-10-19" };
+    expect(endSession(u, 0, "2026-10-20").streak_days).toBe(4);
+    expect(endSession(u, 0, "2026-10-25").streak_days).toBe(1);
+  });
 });

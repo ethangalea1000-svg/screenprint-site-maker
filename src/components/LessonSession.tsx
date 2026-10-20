@@ -58,11 +58,15 @@ export function LessonSession() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl">🎉</div>
         <h1 className="text-3xl font-black text-primary">Leçon terminée !</h1>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <Stat label="Score" value={`${correctCount}/${total}`} cls="border-success text-success" />
           <Stat label="XP gagnés" value={`+${correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
           <Stat label="XP total" value={`${user.total_xp}`} cls="border-flame text-flame" />
+          <Stat label="Série" value={`${user.streak_days} j`} cls="border-flame text-flame" />
         </div>
+        <p className="max-w-sm text-muted-foreground">
+          Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués.
+        </p>
         <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
           Recommencer
         </button>
@@ -126,6 +130,7 @@ export function LessonSession() {
             {status === "wrong" && (
               <span className="text-danger-shade">
                 Bonne réponse : {Array.isArray(ex.correct_answer) ? ex.correct_answer.join(" ") : ex.correct_answer}
+                {ex.explanation && <span className="mt-1 block font-bold">{ex.explanation}</span>}
               </span>
             )}
           </div>
