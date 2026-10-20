@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Heart, Flame, Zap, X } from "lucide-react";
 import {
   EXERCISE_TEMPLATES, MAX_HEARTS, XP_PER_CORRECT, endSession, isCorrect, loadUser, loseHeart, saveUser, type User,
@@ -70,6 +71,9 @@ export function LessonSession() {
         <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
           Recommencer
         </button>
+        <Link to="/" className="btn-3d w-full max-w-xs border-border bg-background py-3 uppercase text-foreground hover:bg-muted">
+          Retour au parcours
+        </Link>
       </div>
     );
   }
@@ -83,7 +87,7 @@ export function LessonSession() {
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
       <header className="flex items-center gap-4 py-6">
-        <button onClick={restart} aria-label="Recommencer" className="rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></button>
+        <Link to="/" aria-label="Quitter la leçon et revenir au parcours" className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></Link>
         <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Progression de la leçon" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
           <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
         </div>

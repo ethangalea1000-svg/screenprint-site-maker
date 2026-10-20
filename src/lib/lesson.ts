@@ -1,4 +1,4 @@
-export type User = { user_id: string; current_hearts: number; total_xp: number; streak_days: number; last_active?: string };
+export type User = { user_id: string; current_hearts: number; total_xp: number; streak_days: number; last_active?: string; lessons_completed?: number };
 
 export type Exercise =
   | { id: number; type: "MCQ"; question: string; options: string[]; correct_answer: string; explanation?: string }
@@ -33,7 +33,7 @@ export function endSession(u: User, correctCount: number, today = new Date().toI
     const diff = (Date.parse(today) - Date.parse(u.last_active)) / 86400000;
     streak = diff === 1 ? streak + 1 : 1;
   }
-  return { ...u, total_xp: u.total_xp + correctCount * XP_PER_CORRECT, streak_days: streak, last_active: today };
+  return { ...u, total_xp: u.total_xp + correctCount * XP_PER_CORRECT, streak_days: streak, last_active: today, lessons_completed: (u.lessons_completed ?? 0) + 1 };
 }
 
 export function loadUser(): User {

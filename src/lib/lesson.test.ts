@@ -15,6 +15,9 @@ describe("lesson rules", () => {
     expect(isCorrect(ex, ["I", "eat", "bread"])).toBe(true);
     expect(isCorrect(ex, ["eat", "I", "bread"])).toBe(false);
   });
+  it("finishing a lesson counts it as completed", () => {
+    expect(endSession(DEFAULT_USER, 0, "2026-10-20").lessons_completed).toBe(1);
+  });
   it("has 5 exercises", () => expect(EXERCISE_TEMPLATES).toHaveLength(5));
   it("every exercise explains its answer after a mistake", () => {
     for (const ex of EXERCISE_TEMPLATES) expect(ex.explanation?.length ?? 0).toBeGreaterThan(0);
