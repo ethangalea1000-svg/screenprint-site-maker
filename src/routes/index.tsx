@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Flame, Heart, Lock, Star, Zap } from "lucide-react";
-import { EXERCISE_TEMPLATES, loadUser, type User } from "@/lib/lesson";
+import { EXERCISE_TEMPLATES, lessonState, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +20,11 @@ export const Route = createFileRoute("/")({
 function Home() {
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => setUser(loadUser()), []);
-  const done = (user?.lessons_completed ?? 0) > 0;
+  const firstLessonState = user ? lessonState(user, "l1") : "available";
+  const secondLessonState = user ? lessonState(user, "l2") : "locked";
+  const firstDone = firstLessonState === "completed";
+  const secondDone = secondLessonState === "completed";
+  const secondLocked = secondLessonState === "locked";
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
@@ -44,20 +48,34 @@ function Home() {
 
         <ol className="flex flex-col items-center gap-8" aria-label="Parcours de l'unité 1">
           <li className="flex flex-col items-center gap-3">
-            <Link to="/lecon" aria-label={done ? "Leçon 1, terminée — refaire" : "Leçon 1, disponible — commencer"}
-              className={`btn-3d grid size-20 place-items-center rounded-full ${done ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
-              {done ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
+            <Link to="/lecon" aria-label={firstDone ? "Leçon 1, terminée — refaire" : "Leçon 1, disponible — commencer"}
+              className={`btn-3d grid size-20 place-items-center rounded-full ${firstDone ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
+              {firstDone ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
             </Link>
             <span className="font-black">Leçon 1 · Mots du quotidien</span>
             <Link to="/lecon" className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
-              {done ? "Refaire la leçon" : "Commencer"}
+              {firstDone ? "Refaire la leçon" : "Commencer"}
             </Link>
           </li>
-          <li className="flex flex-col items-center gap-3 text-muted-foreground" aria-label="Leçon 2, pas encore disponible">
-            <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted">
-              <Lock aria-hidden className="size-8" />
-            </div>
-            <span className="font-black">Leçon 2 · Bientôt disponible</span>
+          <li className="flex flex-col items-center gap-3" aria-label={secondLocked ? "Leçon 2 verrouillée : termine la leçon 1 pour la débloquer" : secondDone ? "Leçon 2 terminée — refaire" : "Leçon 2 disponible"}>
+            {secondLocked ? (
+              <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted text-muted-foreground" aria-hidden="true">
+                <Lock className="size-8" />
+              </div>
+            ) : (
+              <Link to="/lecon" search={{ l: "l2" }} aria-label={secondDone ? "Leçon 2, terminée — refaire" : "Leçon 2, disponible — commencer"}
+                className={`btn-3d grid size-20 place-items-center rounded-full ${secondDone ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
+                {secondDone ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
+              </Link>
+            )}
+            <span className={`font-black ${secondLocked ? "text-muted-foreground" : ""}`}>Leçon 2 · Écouter et parler</span>
+            {secondLocked ? (
+              <span className="text-sm font-bold text-muted-foreground">Termine la leçon 1 pour débloquer</span>
+            ) : (
+              <Link to="/lecon" search={{ l: "l2" }} className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
+                {secondDone ? "Refaire la leçon" : "Commencer"}
+              </Link>
+            )}
           </li>
         </ol>
       </main>
