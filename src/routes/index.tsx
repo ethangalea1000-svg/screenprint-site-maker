@@ -45,7 +45,7 @@ function Home() {
         <ol className="flex flex-col items-center gap-8" aria-label="Parcours de l'unité 1">
           <li className="flex flex-col items-center gap-3">
             <Link to="/lecon" aria-label={done ? "Leçon 1, terminée — refaire" : "Leçon 1, disponible — commencer"}
-              className={`btn-3d grid size-20 place-items-center rounded-full ${done ? "border-xp bg-xp text-primary-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
+              className={`btn-3d grid size-20 place-items-center rounded-full ${done ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
               {done ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
             </Link>
             <span className="font-black">Leçon 1 · Mots du quotidien</span>
