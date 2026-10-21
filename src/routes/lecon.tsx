@@ -3,7 +3,7 @@ import { LessonSession } from "@/components/LessonSession";
 import { getLesson } from "@/lib/lesson";
 
 export const Route = createFileRoute("/lecon")({
-  validateSearch: (s: Record<string, unknown>): { l?: string } => (typeof s.l === "string" ? { l: s.l } : {}),
+  validateSearch: (s: Record<string, unknown>): { l?: string } => (typeof s["l"] === "string" ? { l: s["l"] } : {}),
   head: () => ({
     meta: [
       { title: "Leçon — Langue" },
