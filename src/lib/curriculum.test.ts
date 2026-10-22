@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ALL_LESSONS, UNITS, isCorrect } from "./lesson";
+import { ALL_LESSONS, UNITS, isCorrect, normalize } from "./lesson";
 
 describe("expanded English curriculum", () => {
   it("contains the complete pathway across 25 units and 98 lessons", () => {
@@ -28,7 +28,7 @@ describe("expanded English curriculum", () => {
         if (exercise.type === "TYPE") {
           expect(exercise.prompt).toContain("___");
           expect(exercise.audio.toLowerCase()).toContain(exercise.correct_answer.toLowerCase());
-          expect(exercise.prompt.replace("___", exercise.correct_answer).length).toBeGreaterThan(0);
+          expect(normalize(exercise.prompt.replace("___", exercise.correct_answer))).toBe(normalize(exercise.audio));
         }
         if (exercise.type === "SPEAK") {
           expect(exercise.phrase.toLowerCase()).toBe(exercise.correct_answer.toLowerCase());
