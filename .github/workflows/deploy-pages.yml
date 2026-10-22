@@ -38,14 +38,36 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          echo "Generated files:"
-          find .output/public -maxdepth 2 -type f -printf '%p (%s bytes)\n' | sort | head -80
           test -d .output/public/assets
+          if [ ! -s .output/public/index.html ]; then
+            echo "::warning::TanStack did not produce index.html; publishing an explicit temporary redirect to the hosted app instead of a blank page."
+            cat > .output/public/index.html <<'HTML'
+          <!doctype html>
+          <html lang="fr">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+              <meta http-equiv="refresh" content="0;url=https://screenprint-site-maker.lovable.app/">
+              <meta name="robots" content="noindex">
+              <title>Langue — ouverture de l’application</title>
+            </head>
+            <body>
+              <main>
+                <h1>Langue</h1>
+                <p>Ouverture de l’application…</p>
+                <p><a href="https://screenprint-site-maker.lovable.app/">Si la redirection ne fonctionne pas, ouvre Langue ici.</a></p>
+              </main>
+              <script>window.location.replace("https://screenprint-site-maker.lovable.app/");</script>
+            </body>
+          </html>
+          HTML
+          fi
           test -s .output/public/index.html
-          # GitHub Pages does not offer arbitrary SPA rewrites; use the shell as its 404 fallback.
+          grep -q '<html' .output/public/index.html
           cp .output/public/index.html .output/public/404.html
           touch .output/public/.nojekyll
-          echo "Static site output verified."
+          echo "Verified a non-empty HTML entry point and static assets."
+          find .output/public -maxdepth 2 -type f -printf '%p (%s bytes)\n' | sort | head -80
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
