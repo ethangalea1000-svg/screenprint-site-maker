@@ -35,13 +35,24 @@ jobs:
       - name: Build static site
         run: npm run build
       - name: Normalize and verify static output
+        shell: bash
         run: |
+          set -euxo pipefail
           echo "Generated files before normalization:"
-          find .output/public -maxdepth 2 -type f | sort | head -80
-          # Nitro's GitHub Pages preset currently emits the root prerender as "index".
+          ls -la .output/public
+          find .output/public -maxdepth 2 -type f -printf '%p (%s bytes)\n' | sort | head -80
+          # Nitro's GitHub Pages preset emits the prerendered root as "index".
           # GitHub Pages requires the default document to be named index.html.
-          if [ -s .output/public/index ] && [ ! -s .output/public/index.html ]; then
-            cp .output/public/index .output/public/index.html
+          if [ ! -s .output/public/index.html ]; then
+            if [ -s .output/public/index ]; then
+              cp -f .output/public/index .output/public/index.html
+            elif [ -s .output/public/404.html ]; then
+              echo "Root document missing; refusing to publish an error page as the home page."
+              exit 1
+            else
+              echo "No non-empty prerendered root document found."
+              exit 1
+            fi
           fi
           test -d .output/public/assets
           test -s .output/public/index.html
