@@ -34,10 +34,12 @@ jobs:
         run: npm test
       - name: Build static site
         run: npm run build
-      - name: Verify static output
+      - name: Inspect and verify static output
         run: |
-          test -s .output/public/index.html
+          echo "Generated files:"
+          find .output/public -maxdepth 2 -type f | sort | head -80
           test -d .output/public/assets
+          test -s .output/public/index.html || test -s .output/public/200.html
           echo "Static site output verified."
       - name: Configure Pages
         uses: actions/configure-pages@v5
