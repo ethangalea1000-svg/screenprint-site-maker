@@ -11,9 +11,18 @@ export default defineConfig({
   vite: {
     base: "/screenprint-site-maker/",
   },
-  // Keep TanStack Start's existing server entry so its prerenderer can render the home route.
+  // Keep the existing SSR entry while explicitly generating a client-side SPA shell.
+  // GitHub Pages cannot execute the Nitro server bundle at request time.
   tanstackStart: {
     server: { entry: "server" },
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: "/index.html",
+        crawlLinks: false,
+        retryCount: 1,
+      },
+    },
   },
   nitro: {
     preset: "github_pages",
