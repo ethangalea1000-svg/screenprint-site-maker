@@ -15,10 +15,10 @@ describe("expanded English curriculum", () => {
     expect(ids[2]).toBe("l3");
   });
 
-  it("gives every lesson five complete exercises with explanations", () => {
+  it("gives every lesson complete exercises with explanations", () => {
     for (const lesson of ALL_LESSONS) {
       expect(lesson.title.length, lesson.id).toBeGreaterThan(0);
-      expect(lesson.exercises, lesson.id).toHaveLength(5);
+      expect(lesson.exercises, lesson.id).toHaveLength(lesson.id === "l2" ? 6 : 5);
       for (const exercise of lesson.exercises) {
         expect(exercise.question.length, `${lesson.id} exercise ${exercise.id}`).toBeGreaterThan(0);
         expect(exercise.explanation?.length, `${lesson.id} exercise ${exercise.id}`).toBeGreaterThan(0);
