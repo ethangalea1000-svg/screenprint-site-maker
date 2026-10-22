@@ -34,12 +34,17 @@ jobs:
         run: npm test
       - name: Build static site
         run: npm run build
-      - name: Inspect and verify static output
+      - name: Normalize and verify static output
         run: |
-          echo "Generated files:"
+          echo "Generated files before normalization:"
           find .output/public -maxdepth 2 -type f | sort | head -80
+          # Nitro's GitHub Pages preset currently emits the root prerender as "index".
+          # GitHub Pages requires the default document to be named index.html.
+          if [ -s .output/public/index ] && [ ! -s .output/public/index.html ]; then
+            cp .output/public/index .output/public/index.html
+          fi
           test -d .output/public/assets
-          test -s .output/public/index.html || test -s .output/public/200.html
+          test -s .output/public/index.html
           echo "Static site output verified."
       - name: Configure Pages
         uses: actions/configure-pages@v5
