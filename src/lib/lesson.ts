@@ -88,6 +88,7 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
     ? gapSource.slice(0, gapIndex) + "___" + gapSource.slice(gapIndex + gapToken.length)
     : `___ (${topic.translation})`;
   const typeAudio = gapSource;
+  const typeAnswer = gapToken;
   return {
     id: topic.id,
     title: topic.title,
