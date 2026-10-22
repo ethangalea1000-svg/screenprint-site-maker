@@ -78,16 +78,16 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
   const hasAuthoredGap = topic.gap.includes("___");
   const gapToken = hasAuthoredGap
     ? topic.gapAnswer.replace(/^[^a-z']+|[^a-z']+$/gi, "")
-    : (topic.phrase.split(/\\s+/).find((part) => {
+    : (topic.phrase.split(/\s+/).find((part) => {
         const token = part.replace(/^[^a-z']+|[^a-z']+$/gi, "");
         return token.length >= 4 && !/^(the|this|that|with|from|have|will|would|should|could|their|there|about|than)$/i.test(token);
-      }) ?? topic.phrase.split(/\\s+/)[0]!).replace(/^[^a-z']+|[^a-z']+$/gi, "");
+      }) ?? topic.phrase.split(/\s+/)[0]!).replace(/^[^a-z']+|[^a-z']+$/gi, "");
   const gapSource = hasAuthoredGap ? topic.gap.replace("___", gapToken) : topic.phrase;
   const typeAudio = gapSource;
   const typeAnswer = gapToken;
   const typePrompt = hasAuthoredGap
     ? topic.gap
-    : topic.phrase.split(/\\s+/).map((part) => {
+    : topic.phrase.split(/\s+/).map((part) => {
         const token = part.replace(/^[^a-z']+|[^a-z']+$/gi, "");
         return token.toLowerCase() === gapToken.toLowerCase()
           ? part.replace(token, "___")
