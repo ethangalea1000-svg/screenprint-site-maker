@@ -73,6 +73,22 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
   const sentenceWords = topic.phrase.replace(/[.!?]/g, "").split(" ");
   const reorderOptions = [...sentenceWords].sort((a, b) => a.localeCompare(b));
   if (!reorderOptions.includes("please") && reorderOptions.length < 7) reorderOptions.push("please");
+  // Every typing exercise must contain a real blank and accept the exact word hidden in its audio.
+  // Topic data from different levels is intentionally varied, so fall back to the example sentence
+  // whenever a legacy gap does not contain its declared answer.
+  const gapSource = topic.gap.includes("___") && topic.gap.toLowerCase().includes(topic.gapAnswer.toLowerCase())
+    ? topic.gap
+    : topic.phrase;
+  const requestedAnswer = topic.gap.includes("___") && topic.gap.toLowerCase().includes(topic.gapAnswer.toLowerCase())
+    ? topic.gapAnswer
+    : topic.phrase.split(/\s+/).find((part) => part.replace(/[^a-z']/gi, "").length >= 4 && !/^(the|this|that|with|from|have|will|would|should|could|their|there|about|than)$/i.test(part.replace(/[^a-z']/gi, ""))) ?? topic.phrase.split(/\s+/)[0]!;
+  const gapToken = requestedAnswer.replace(/^[^a-z']+|[^a-z']+$/gi, "");
+  const gapIndex = gapSource.toLowerCase().indexOf(gapToken.toLowerCase());
+  const typePrompt = gapIndex >= 0
+    ? gapSource.slice(0, gapIndex) + "___" + gapSource.slice(gapIndex + gapToken.length)
+    : `___ (${topic.translation})`;
+  const typeAudio = gapSource;
+  const typeAnswer = gapIndex >= 0 ? gapToken : requestedAnswer;
   return {
     id: topic.id,
     title: topic.title,
@@ -81,7 +97,7 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
       { id: 1, type: "MCQ", question: `Que signifie « ${word.en} » ?`, options: choices, correct_answer: word.fr, answer_audio: word.en, explanation: `« ${word.en} » signifie « ${word.fr} ».` },
       { id: 2, type: "REORDER", question: `Remets les mots dans l'ordre : « ${topic.translation} »`, options: reorderOptions, correct_answer: sentenceWords, answer_audio: topic.phrase, explanation: `En anglais : « ${topic.phrase} ».` },
       { id: 3, type: "LISTEN", question: "Écoute le mot et choisis sa traduction", audio: answerWord.en, options: [answerWord.fr, ...words.filter((w) => w.en !== answerWord.en).slice(0, 3).map((w) => w.fr)], correct_answer: answerWord.fr, explanation: `« ${answerWord.en} » signifie « ${answerWord.fr} ».` },
-      { id: 4, type: "TYPE", question: "Écoute puis complète la phrase", audio: topic.gap.replace("___", topic.gapAnswer), prompt: topic.gap, correct_answer: topic.gapAnswer.toLowerCase(), explanation: `La phrase complète est : « ${topic.gap.replace("___", topic.gapAnswer)} ».` },
+      { id: 4, type: "TYPE", question: "Écoute puis complète la phrase", audio: typeAudio, prompt: typePrompt, correct_answer: typeAnswer.toLowerCase(), explanation: `La phrase complète est : « ${typeAudio} ».` },
       { id: 5, type: "SPEAK", question: `Dis « ${topic.speakingFr} » en anglais`, phrase: topic.speaking, correct_answer: topic.speaking.toLowerCase(), explanation: `Répète : « ${topic.speaking} ».` },
     ],
   };
