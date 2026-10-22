@@ -14,11 +14,6 @@ export default defineConfig({
   // Produce static HTML/assets for hosting without a server runtime.
   tanstackStart: {
     server: { entry: "server" },
-    prerender: {
-      enabled: true,
-      crawlLinks: true,
-      failOnError: true,
-    },
   },
   nitro: {
     preset: "github_pages",
