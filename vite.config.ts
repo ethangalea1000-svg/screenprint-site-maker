@@ -11,9 +11,17 @@ export default defineConfig({
   vite: {
     base: "/screenprint-site-maker/",
   },
-  // Produce static HTML/assets for hosting without a server runtime.
+  // GitHub Pages is static hosting: use TanStack Start's client-rendered SPA shell.
+  // Writing the shell to index.html avoids requiring a server-side runtime.
   tanstackStart: {
     server: { entry: "server" },
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: "/index.html",
+        crawlLinks: false,
+      },
+    },
   },
   nitro: {
     preset: "github_pages",
