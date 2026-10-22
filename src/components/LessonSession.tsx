@@ -4,7 +4,7 @@ import { Heart, Flame, Zap, X, Mic, Square } from "lucide-react";
 import {
   MAX_HEARTS, XP_PER_CORRECT, endSession, isCorrect, loadUser, loseHeart, missingWords, saveUser, type Lesson, type User,
 } from "@/lib/lesson";
-import { canRecognize, listen, type ListenError } from "@/lib/speech";
+import { canRecognize, listen, stopSpeaking, type ListenError } from "@/lib/speech";
 import { SpeakButton } from "@/components/SpeakButton";
 
 type Status = "idle" | "pending" | "correct" | "wrong";
@@ -37,8 +37,10 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   const [done, setDone] = useState(false);
   const stopRef = useRef<() => void>(() => {});
 
+  const finishedRef = useRef(false);
   useEffect(() => { setUser(loadUser()); setSrSupported(canRecognize()); }, []);
-  useEffect(() => () => stopRef.current(), []);
+  // Leaving the lesson stops the mic and any audio still playing.
+  useEffect(() => () => { stopRef.current(); stopSpeaking(); }, []);
 
   const ex = exercises[index]!;
   const total = exercises.length;
@@ -89,14 +91,15 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
 
   const next = () => {
     if (index + 1 >= total) {
-      update(endSession(user!, correctCount, undefined, lesson.id));
+      // Guard: a double click on "Continuer" must not award XP twice.
+      if (!finishedRef.current) { finishedRef.current = true; update(endSession(loadUser(), correctCount, undefined, lesson.id)); }
       setDone(true);
       return;
     }
     setIndex(index + 1); reset();
   };
 
-  const restart = () => { setIndex(0); reset(); setCorrectCount(0); setDone(false); };
+  const restart = () => { finishedRef.current = false; setIndex(0); reset(); setCorrectCount(0); setDone(false); };
 
   if (!user) return <div className="min-h-screen" />;
 

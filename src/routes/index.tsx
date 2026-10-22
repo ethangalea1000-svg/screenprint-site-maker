@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Flame, Heart, Lock, Star, Zap } from "lucide-react";
-import { EXERCISE_TEMPLATES, loadUser, type User } from "@/lib/lesson";
+import { UNITS, lessonState, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,7 +20,6 @@ export const Route = createFileRoute("/")({
 function Home() {
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => setUser(loadUser()), []);
-  const done = (user?.lessons_completed ?? 0) > 0;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
@@ -36,30 +35,45 @@ function Home() {
       </header>
 
       <main className="flex-1 pb-12">
-        <section className="btn-3d mb-10 border-primary-shade bg-primary p-5 text-primary-foreground">
-          <p className="text-sm font-extrabold uppercase opacity-90">Unité 1 · Les bases</p>
-          <h1 className="mt-1 text-2xl font-black">Premiers mots en anglais</h1>
-          <p className="mt-1 font-bold opacity-90">Objectif du jour : terminer une leçon ({EXERCISE_TEMPLATES.length} exercices).</p>
-        </section>
-
-        <ol className="flex flex-col items-center gap-8" aria-label="Parcours de l'unité 1">
-          <li className="flex flex-col items-center gap-3">
-            <Link to="/lecon" aria-label={done ? "Leçon 1, terminée — refaire" : "Leçon 1, disponible — commencer"}
-              className={`btn-3d grid size-20 place-items-center rounded-full ${done ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
-              {done ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
-            </Link>
-            <span className="font-black">Leçon 1 · Mots du quotidien</span>
-            <Link to="/lecon" className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
-              {done ? "Refaire la leçon" : "Commencer"}
-            </Link>
-          </li>
-          <li className="flex flex-col items-center gap-3 text-muted-foreground" aria-label="Leçon 2, pas encore disponible">
-            <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted">
-              <Lock aria-hidden className="size-8" />
+        {UNITS.map((unit, ui) => (
+          <section key={unit.id} className="mb-12">
+            <div className="btn-3d mb-10 border-primary-shade bg-primary p-5 text-primary-foreground">
+              <p className="text-sm font-extrabold uppercase opacity-90">Unité {ui + 1}</p>
+              <h1 className="mt-1 text-2xl font-black">{unit.title}</h1>
+              <p className="mt-1 font-bold opacity-90">{unit.goal}</p>
             </div>
-            <span className="font-black">Leçon 2 · Bientôt disponible</span>
-          </li>
-        </ol>
+            <ol className="flex flex-col items-center gap-4" aria-label={`Parcours de l'unité ${ui + 1}`}>
+              {unit.lessons.map((lesson, li) => {
+                const st = user ? lessonState(user, lesson.id) : "locked";
+                const name = `Leçon ${li + 1} · ${lesson.title}`;
+                return (
+                  <li key={lesson.id} className="flex flex-col items-center gap-3">
+                    {li > 0 && <span aria-hidden className={`h-8 w-1.5 rounded-full ${st === "locked" ? "bg-muted" : "bg-primary"}`} />}
+                    {st === "locked" ? (
+                      <div className="flex flex-col items-center gap-3 text-muted-foreground" aria-label={`${name}, verrouillée : termine la leçon précédente`}>
+                        <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted"><Lock aria-hidden className="size-8" /></div>
+                        <span className="font-black">{name}</span>
+                        <span className="text-sm font-bold">Termine la leçon précédente pour la débloquer</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Link to="/lecon" search={{ l: lesson.id }} aria-label={st === "completed" ? `${name}, terminée — refaire` : `${name}, disponible — commencer`}
+                          className={`btn-3d grid size-20 place-items-center rounded-full ${st === "completed" ? "border-xp bg-xp text-foreground" : "border-primary-shade bg-primary text-primary-foreground"}`}>
+                          {st === "completed" ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
+                        </Link>
+                        <span className="font-black">{name}</span>
+                        <span className="text-center text-sm font-bold text-muted-foreground">{lesson.skills.join(" · ")} · {lesson.exercises.length} exercices</span>
+                        <Link to="/lecon" search={{ l: lesson.id }} className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
+                          {st === "completed" ? "Refaire la leçon" : "Commencer"}
+                        </Link>
+                      </>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ))}
       </main>
     </div>
   );
