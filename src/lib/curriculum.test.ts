@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { ALL_LESSONS, UNITS, isCorrect } from "./lesson";
 
 describe("expanded English curriculum", () => {
-  it("contains six units and at least twenty lessons", () => {
-    expect(UNITS.length).toBeGreaterThanOrEqual(20);
-    expect(ALL_LESSONS.length).toBeGreaterThanOrEqual(90);
+  it("contains the complete pathway across 25 units and 98 lessons", () => {
+    expect(UNITS).toHaveLength(25);
+    expect(ALL_LESSONS).toHaveLength(98);
   });
 
   it("uses unique lesson ids so progression unlocks in the right order", () => {
@@ -28,6 +28,7 @@ describe("expanded English curriculum", () => {
         if (exercise.type === "TYPE") {
           expect(exercise.prompt).toContain("___");
           expect(exercise.audio.toLowerCase()).toContain(exercise.correct_answer.toLowerCase());
+          expect(exercise.prompt.replace("___", exercise.correct_answer).length).toBeGreaterThan(0);
         }
         if (exercise.type === "SPEAK") {
           expect(exercise.phrase.toLowerCase()).toBe(exercise.correct_answer.toLowerCase());
