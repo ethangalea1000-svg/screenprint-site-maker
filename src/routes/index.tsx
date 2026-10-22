@@ -62,7 +62,7 @@ function Home() {
                           {st === "completed" ? <Check aria-hidden className="size-9" strokeWidth={4} /> : <Star aria-hidden className="size-9 fill-current" />}
                         </Link>
                         <span className="font-black">{name}</span>
-                        <span className="text-sm font-bold text-muted-foreground">{lesson.skills.join(" · ")} · {lesson.exercises.length} exercices</span>
+                        <span className="text-center text-sm font-bold text-muted-foreground">{lesson.skills.join(" · ")} · {lesson.exercises.length} exercices</span>
                         <Link to="/lecon" search={{ l: lesson.id }} className="btn-3d border-primary-shade bg-primary px-8 py-3 uppercase text-primary-foreground">
                           {st === "completed" ? "Refaire la leçon" : "Commencer"}
                         </Link>
