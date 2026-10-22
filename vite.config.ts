@@ -14,6 +14,7 @@ export default defineConfig({
   // GitHub Pages is static hosting: use TanStack Start's client-rendered SPA shell.
   // Writing the shell to index.html avoids requiring a server-side runtime.
   tanstackStart: {
+    server: { entry: "./src/server.ts" },
     spa: {
       enabled: true,
       prerender: {
