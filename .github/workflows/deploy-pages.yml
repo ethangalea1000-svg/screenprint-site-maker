@@ -26,6 +26,10 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --no-audit --no-fund --legacy-peer-deps
+      # Nitro's June beta has a known Vite 8 static-preset build failure.
+      # Use the upstream-fixed nightly only in this Pages build until a stable fix is published.
+      - name: Install Nitro static-build fix
+        run: npm install --no-save --no-audit --no-fund --legacy-peer-deps 'nitro@npm:nitro-nightly@3.0.1-20260820-204949-2b3f1011'
       - name: Run tests
         run: npm test
       - name: Build static site
