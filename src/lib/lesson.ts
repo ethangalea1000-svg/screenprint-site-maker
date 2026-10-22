@@ -73,22 +73,21 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
   const sentenceWords = topic.phrase.replace(/[.!?]/g, "").split(" ");
   const reorderOptions = [...sentenceWords].sort((a, b) => a.localeCompare(b));
   if (!reorderOptions.includes("please") && reorderOptions.length < 7) reorderOptions.push("please");
-  // Every typing exercise must contain a real blank and accept the exact word hidden in its audio.
-  // Topic data from different levels is intentionally varied, so fall back to the example sentence
-  // whenever a legacy gap does not contain its declared answer.
-  const gapSource = topic.gap.includes("___") && topic.gap.toLowerCase().includes(topic.gapAnswer.toLowerCase())
-    ? topic.gap
-    : topic.phrase;
-  const requestedAnswer = topic.gap.includes("___") && topic.gap.toLowerCase().includes(topic.gapAnswer.toLowerCase())
-    ? topic.gapAnswer
-    : topic.phrase.split(/\s+/).find((part) => part.replace(/[^a-z']/gi, "").length >= 4 && !/^(the|this|that|with|from|have|will|would|should|could|their|there|about|than)$/i.test(part.replace(/[^a-z']/gi, ""))) ?? topic.phrase.split(/\s+/)[0]!;
-  const gapToken = requestedAnswer.replace(/^[^a-z']+|[^a-z']+$/gi, "");
+  // Prefer each topic's authored gap; older topics may instead provide a full sentence.
+  // In both cases the blank, expected answer and spoken sentence stay in sync.
+  const hasAuthoredGap = topic.gap.includes("___");
+  const gapToken = hasAuthoredGap
+    ? topic.gapAnswer.replace(/^[^a-z']+|[^a-z']+$/gi, "")
+    : (topic.phrase.split(/\\s+/).find((part) => {
+        const token = part.replace(/^[^a-z']+|[^a-z']+$/gi, "");
+        return token.length >= 4 && !/^(the|this|that|with|from|have|will|would|should|could|their|there|about|than)$/i.test(token);
+      }) ?? topic.phrase.split(/\\s+/)[0]!).replace(/^[^a-z']+|[^a-z']+$/gi, "");
+  const gapSource = hasAuthoredGap ? topic.gap.replace("___", gapToken) : topic.phrase;
   const gapIndex = gapSource.toLowerCase().indexOf(gapToken.toLowerCase());
   const typePrompt = gapIndex >= 0
     ? gapSource.slice(0, gapIndex) + "___" + gapSource.slice(gapIndex + gapToken.length)
     : `___ (${topic.translation})`;
   const typeAudio = gapSource;
-  const typeAnswer = gapIndex >= 0 ? gapToken : requestedAnswer;
   return {
     id: topic.id,
     title: topic.title,
