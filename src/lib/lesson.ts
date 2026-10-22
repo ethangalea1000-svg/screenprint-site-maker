@@ -83,12 +83,16 @@ function buildTopicLesson(topic: LessonTopic, seed: number): Lesson {
         return token.length >= 4 && !/^(the|this|that|with|from|have|will|would|should|could|their|there|about|than)$/i.test(token);
       }) ?? topic.phrase.split(/\\s+/)[0]!).replace(/^[^a-z']+|[^a-z']+$/gi, "");
   const gapSource = hasAuthoredGap ? topic.gap.replace("___", gapToken) : topic.phrase;
-  const gapIndex = gapSource.toLowerCase().indexOf(gapToken.toLowerCase());
-  const typePrompt = gapIndex >= 0
-    ? gapSource.slice(0, gapIndex) + "___" + gapSource.slice(gapIndex + gapToken.length)
-    : `___ (${topic.translation})`;
   const typeAudio = gapSource;
   const typeAnswer = gapToken;
+  const typePrompt = hasAuthoredGap
+    ? topic.gap
+    : topic.phrase.split(/\\s+/).map((part) => {
+        const token = part.replace(/^[^a-z']+|[^a-z']+$/gi, "");
+        return token.toLowerCase() === gapToken.toLowerCase()
+          ? part.replace(token, "___")
+          : part;
+      }).join(" ");
   return {
     id: topic.id,
     title: topic.title,
