@@ -4,6 +4,10 @@ export function canSpeak(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+export function stopSpeaking() {
+  if (canSpeak()) window.speechSynthesis.cancel();
+}
+
 function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
   const voices = window.speechSynthesis.getVoices();
   const base = lang.slice(0, 2);
