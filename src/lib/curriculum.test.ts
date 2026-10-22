@@ -3,8 +3,8 @@ import { ALL_LESSONS, UNITS, isCorrect } from "./lesson";
 
 describe("expanded English curriculum", () => {
   it("contains six units and at least twenty lessons", () => {
-    expect(UNITS).toHaveLength(6);
-    expect(ALL_LESSONS.length).toBeGreaterThanOrEqual(20);
+    expect(UNITS.length).toBeGreaterThanOrEqual(20);
+    expect(ALL_LESSONS.length).toBeGreaterThanOrEqual(90);
   });
 
   it("uses unique lesson ids so progression unlocks in the right order", () => {
