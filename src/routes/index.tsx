@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Flame, Heart, Lock, Star, Zap } from "lucide-react";
-import { UNITS, lessonState, loadUser, type User } from "@/lib/lesson";
+import { ALL_LESSONS, UNITS, completedLessons, lessonState, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -20,6 +20,8 @@ export const Route = createFileRoute("/")({
 function Home() {
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => setUser(loadUser()), []);
+  const completedCount = user ? completedLessons(user).filter((id) => ALL_LESSONS.some((lesson) => lesson.id === id)).length : 0;
+  const progress = Math.round((completedCount / ALL_LESSONS.length) * 100);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
@@ -35,6 +37,16 @@ function Home() {
       </header>
 
       <main className="flex-1 pb-12">
+        <section aria-label="Progression générale" className="mb-10 rounded-2xl border border-border bg-card p-5">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h1 className="text-lg font-black">Ton parcours d’anglais</h1>
+            <span className="shrink-0 text-sm font-extrabold text-primary">{progress} %</span>
+          </div>
+          <div className="mb-2 h-3 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Progression du parcours" aria-valuemin={0} aria-valuemax={ALL_LESSONS.length} aria-valuenow={completedCount}>
+            <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${progress}%` }} />
+          </div>
+          <p className="text-sm font-bold text-muted-foreground">{completedCount} / {ALL_LESSONS.length} leçons terminées · {UNITS.length} unités · de A1 à des notions avancées C2</p>
+        </section>
         {UNITS.map((unit, ui) => (
           <section key={unit.id} className="mb-12">
             <div className="btn-3d mb-10 border-primary-shade bg-primary p-5 text-primary-foreground">
@@ -45,7 +57,8 @@ function Home() {
             <ol className="flex flex-col items-center gap-4" aria-label={`Parcours de l'unité ${ui + 1}`}>
               {unit.lessons.map((lesson, li) => {
                 const st = user ? lessonState(user, lesson.id) : "locked";
-                const name = `Leçon ${li + 1} · ${lesson.title}`;
+                const globalIndex = UNITS.slice(0, ui).reduce((total, previous) => total + previous.lessons.length, li + 1);
+                const name = `Leçon ${globalIndex} · ${lesson.title}`;
                 return (
                   <li key={lesson.id} className="flex flex-col items-center gap-3">
                     {li > 0 && <span aria-hidden className={`h-8 w-1.5 rounded-full ${st === "locked" ? "bg-muted" : "bg-primary"}`} />}

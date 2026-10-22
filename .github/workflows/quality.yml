@@ -1,0 +1,29 @@
+name: Quality checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+      - name: Run curriculum and unit tests
+        run: npm test
+      - name: Check lint (advisory until repository formatting is normalized)
+        run: npm run lint
+        continue-on-error: true
+      - name: Build production bundle
+        run: npm run build

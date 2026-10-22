@@ -1,6 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Lock } from "lucide-react";
 import { LessonSession } from "@/components/LessonSession";
-import { getLesson } from "@/lib/lesson";
+import { ALL_LESSONS, getLesson, lessonState, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/lecon")({
   validateSearch: (s: Record<string, unknown>): { l?: string } => (typeof s["l"] === "string" ? { l: s["l"] } : {}),
@@ -19,6 +21,34 @@ export const Route = createFileRoute("/lecon")({
 
 function LessonPage() {
   const { l } = Route.useSearch();
-  const lesson = getLesson(l ?? "l1");
-  return <LessonSession key={lesson.id} lesson={lesson} />;
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => setUser(loadUser()), []);
+
+  const lessonExists = ALL_LESSONS.some((item) => item.id === (l ?? "l1"));
+  if (!lessonExists) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-4 text-center">
+        <h1 className="text-2xl font-black">Leçon introuvable</h1>
+        <p className="text-muted-foreground">Cette leçon n'existe pas ou son lien est incorrect.</p>
+        <Link to="/" className="btn-3d border-primary-shade bg-primary px-6 py-3 font-bold text-primary-foreground">Retour au parcours</Link>
+      </main>
+    );
+  }
+  if (!user) {
+    return <main className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-4"><p role="status">Chargement de ta progression…</p></main>;
+  }
+
+  const lessonId = l ?? "l1";
+  if (lessonState(user, lessonId) === "locked") {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-4 text-center">
+        <div className="grid size-20 place-items-center rounded-full border-2 border-b-4 border-border bg-muted"><Lock aria-hidden className="size-8" /></div>
+        <h1 className="text-2xl font-black">Leçon verrouillée</h1>
+        <p className="text-muted-foreground">Termine la leçon précédente pour débloquer celle-ci. Ta progression est conservée sur cet appareil.</p>
+        <Link to="/" className="btn-3d border-primary-shade bg-primary px-6 py-3 font-bold text-primary-foreground">Revenir au parcours</Link>
+      </main>
+    );
+  }
+
+  return <LessonSession key={lessonId} lesson={getLesson(lessonId)} />;
 }
