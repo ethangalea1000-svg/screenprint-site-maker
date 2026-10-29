@@ -7,9 +7,24 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
+  // GitHub Pages hosts project sites below /<repository-name>/.
+  vite: {
+    base: "/screenprint-site-maker/",
+  },
+  // Keep the existing SSR entry while explicitly generating a client-side SPA shell.
+  // GitHub Pages cannot execute the Nitro server bundle at request time.
   tanstackStart: {
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
+    spa: {
+      enabled: true,
+      prerender: {
+        outputPath: "/index.html",
+        crawlLinks: false,
+        retryCount: 1,
+      },
+    },
+  },
+  nitro: {
+    preset: "github_pages",
   },
 });
