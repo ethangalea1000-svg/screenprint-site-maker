@@ -1,8 +1,12 @@
-name: Deploy Langue to GitHub Pages
+name: Deploy standalone Langue to GitHub Pages
 
 on:
   push:
-    branches: [fix/github-pages-static-deploy, feat/full-english-curriculum, main]
+    branches:
+      - fix/standalone-github-pages
+      - fix/github-pages-static-deploy
+      - feat/full-english-curriculum
+      - main
   workflow_dispatch:
 
 permissions:
@@ -24,49 +28,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund --legacy-peer-deps
-      # Nitro's June beta has a known Vite 8 static-preset build failure.
-      # Use the upstream-fixed nightly only in this Pages build until a stable fix is published.
-      - name: Install Nitro static-build fix
-        run: npm install --no-save --no-audit --no-fund --legacy-peer-deps 'nitro@npm:nitro-nightly@3.0.1-20260820-204949-2b3f1011'
       - name: Run tests
         run: npm test
-      - name: Build static site
-        run: npm run build
-      - name: Verify and prepare static output
+      - name: Build standalone client application
+        run: npx vite build --config vite.pages.config.ts
+      - name: Verify static application output
         shell: bash
         run: |
-          set -euxo pipefail
-          test -d .output/public/assets
-          if [ ! -s .output/public/index.html ]; then
-            echo "::warning::TanStack did not produce index.html; publishing an explicit temporary redirect to the hosted app instead of a blank page."
-            cat > .output/public/index.html <<'HTML'
-          <!doctype html>
-          <html lang="fr">
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1">
-              <meta http-equiv="refresh" content="0;url=https://screenprint-site-maker.lovable.app/">
-              <meta name="robots" content="noindex">
-              <title>Langue — ouverture de l’application</title>
-            </head>
-            <body>
-              <main>
-                <h1>Langue</h1>
-                <p>Ouverture de l’application…</p>
-                <p><a href="https://screenprint-site-maker.lovable.app/">Si la redirection ne fonctionne pas, ouvre Langue ici.</a></p>
-              </main>
-              <script>window.location.replace("https://screenprint-site-maker.lovable.app/");</script>
-            </body>
-          </html>
-          HTML
-          fi
+          set -euo pipefail
           test -s .output/public/index.html
-          grep -q '<html' .output/public/index.html
+          test -d .output/public/assets
+          grep -q '<div id="root"></div>' .output/public/index.html
+          grep -Eq 'src="/screenprint-site-maker/assets/[^"]+\.js"' .output/public/index.html
+          ! grep -qi 'lovable\.app' .output/public/index.html
+          test -n "$(find .output/public/assets -maxdepth 1 -type f -name '*.js' -print -quit)"
           cp .output/public/index.html .output/public/404.html
           touch .output/public/.nojekyll
-          echo "Verified a non-empty HTML entry point and static assets."
+          echo "Standalone SPA shell and JavaScript bundle verified."
           find .output/public -maxdepth 2 -type f -printf '%p (%s bytes)\n' | sort | head -80
       - name: Configure Pages
         uses: actions/configure-pages@v5
@@ -74,6 +55,7 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: .output/public
+
   deploy:
     environment:
       name: github-pages
@@ -84,3 +66,25 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Smoke-test the published site
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE="https://ethangalea1000-svg.github.io"
+          PAGE="$SITE/screenprint-site-maker/"
+          for attempt in {1..10}; do
+            if curl --fail --silent --show-error "$PAGE" -o /tmp/pages-index.html; then
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              echo "GitHub Pages did not return the published index after retries."
+              exit 1
+            fi
+            sleep 5
+          done
+          grep -q '<div id="root"></div>' /tmp/pages-index.html
+          grep -Eq 'src="/screenprint-site-maker/assets/[^"]+\.js"' /tmp/pages-index.html
+          ! grep -qi 'lovable\.app' /tmp/pages-index.html
+          ASSET_PATH="$(grep -oE 'src="/screenprint-site-maker/assets/[^"]+\.js"' /tmp/pages-index.html | head -n 1 | cut -d '"' -f 2)"
+          curl --fail --silent --show-error "$SITE$ASSET_PATH" -o /dev/null
+          echo "Published HTML and its JavaScript bundle are reachable without a Lovable redirect."
