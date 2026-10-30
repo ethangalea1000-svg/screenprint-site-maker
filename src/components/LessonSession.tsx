@@ -177,6 +177,7 @@ export function LessonSession({
       </header>
 
       <main className="flex-1 py-6">
+        {onFinish && <p className="mb-2 text-sm font-extrabold uppercase text-primary">Test de validation · 80 % requis</p>}
         <p className="mb-2 text-sm font-extrabold uppercase text-muted-foreground">{INSTRUCTION[ex.type]}</p>
         <div className="mb-8 flex items-start gap-3">
           <h1 className="min-w-0 flex-1 text-2xl font-black">{ex.question}</h1>
