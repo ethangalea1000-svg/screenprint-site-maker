@@ -21,7 +21,14 @@ const MIC_ERRORS: Record<ListenError, string> = {
   other: "La reconnaissance vocale a échoué. Réessaie ou écris ta réponse ci-dessous.",
 };
 
-export function LessonSession({ lesson }: { lesson: Lesson }) {
+export function LessonSession({
+  lesson,
+  onFinish,
+}: {
+  lesson: Lesson;
+  /** When provided, the caller owns progression and returns whether the assessment passed. */
+  onFinish?: (correctCount: number, total: number) => boolean;
+}) {
   const exercises = lesson.exercises;
   const [user, setUser] = useState<User | null>(null);
   const [index, setIndex] = useState(0);
@@ -35,6 +42,7 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   const [status, setStatus] = useState<Status>("idle");
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [testPassed, setTestPassed] = useState<boolean | null>(null);
   const stopRef = useRef<() => void>(() => {});
 
   const finishedRef = useRef(false);
@@ -92,7 +100,16 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   const next = () => {
     if (index + 1 >= total) {
       // Guard: a double click on "Continuer" must not award XP twice.
-      if (!finishedRef.current) { finishedRef.current = true; update(endSession(loadUser(), correctCount, undefined, lesson.id)); }
+      if (!finishedRef.current) {
+        finishedRef.current = true;
+        if (onFinish) {
+          const passed = onFinish(correctCount, total);
+          setTestPassed(passed);
+          if (passed) setUser(loadUser());
+        } else {
+          update(endSession(loadUser(), correctCount, undefined, lesson.id));
+        }
+      }
       setDone(true);
       return;
     }
@@ -107,19 +124,25 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl motion-safe:animate-bounce" aria-hidden>🎉</div>
-        <h1 className="text-3xl font-black text-primary">Leçon terminée !</h1>
+        <h1 className="text-3xl font-black text-primary">
+          {onFinish ? (testPassed ? "Unité validée !" : "Test non réussi") : "Leçon terminée !"}
+        </h1>
         <p className="font-bold">{lesson.title}</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Stat label="Score" value={`${correctCount}/${total}`} cls="border-success text-success" />
-          <Stat label="XP gagnés" value={`+${correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
+          <Stat label="Score" value={`${correctCount}/${total}`} cls={onFinish && !testPassed ? "border-danger text-danger" : "border-success text-success"} />
+          <Stat label="XP gagnés" value={`+${onFinish && !testPassed ? 0 : correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
           <Stat label="XP total" value={`${user.total_xp}`} cls="border-flame text-flame" />
           <Stat label="Série" value={`${user.streak_days} j`} cls="border-flame text-flame" />
         </div>
         <p className="max-w-sm text-muted-foreground">
-          Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués.
+          {onFinish
+            ? testPassed
+              ? "Tu as validé cette unité. Tu peux toujours refaire ses leçons depuis le parcours."
+              : "Il faut au moins 80 % de bonnes réponses. Ta progression et ton XP restent inchangés ; tu peux réessayer."
+            : "Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués."}
         </p>
         <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
-          Recommencer
+          {onFinish ? "Réessayer le test" : "Recommencer"}
         </button>
         <Link to="/" className="btn-3d w-full max-w-xs border-border bg-background py-3 uppercase text-foreground hover:bg-muted">
           Retour au parcours
