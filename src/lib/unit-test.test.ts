@@ -45,6 +45,7 @@ describe("unit skip assessments", () => {
 
     expect(isUnitCompleted(updated, unit.id)).toBe(true);
     expect(updated.completed_lessons).toEqual(expect.arrayContaining(unit.lessons.map((lesson) => lesson.id)));
+    expect(lessonState(updated, unit.lessons[0]!.id)).toBe("completed");
     expect(updated.lessons_completed).toBe(unit.lessons.length);
     expect(updated.total_xp).toBe(160);
     expect(lessonState(updated, "l7")).toBe("available");
@@ -68,6 +69,6 @@ describe("unit skip assessments", () => {
     expect(second).toBe(first);
     expect(second.completed_lessons).toContain("l1");
     expect(second.total_xp).toBe(160);
-    expect(second.lessons_completed).toBe(unit.lessons.length + 1);
+    expect(second.lessons_completed).toBe(unit.lessons.length);
   });
 });
