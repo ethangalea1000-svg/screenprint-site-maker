@@ -380,6 +380,82 @@ export function lessonState(u: User, lessonId: string): LessonState {
   return done.includes(ALL_LESSONS[i - 1]!.id) ? "available" : "locked";
 }
 
+export const UNIT_TEST_PASS_RATE = 0.8;
+
+/** Returns the unit matching an id, without changing the curriculum. */
+export function getUnit(id: string): Unit | undefined {
+  return UNITS.find((unit) => unit.id === id);
+}
+
+/** A stratified sample: one exercise of each available type from every lesson. */
+export function buildUnitTestLesson(unit: Unit, includeSpeak: boolean): Lesson {
+  const types: Exercise["type"][] = includeSpeak
+    ? ["MCQ", "REORDER", "LISTEN", "TYPE", "SPEAK"]
+    : ["MCQ", "REORDER", "LISTEN", "TYPE"];
+  let nextId = 1;
+  const exercises = unit.lessons.flatMap((lesson) =>
+    types.flatMap((type) => {
+      const exercise = lesson.exercises.find((item) => item.type === type);
+      return exercise ? [{ ...exercise, id: nextId++ } as Exercise] : [];
+    }),
+  );
+
+  return {
+    id: `unit-test-${unit.id}`,
+    title: `Test de l'unité : ${unit.title}`,
+    skills: [...new Set(unit.lessons.flatMap((lesson) => lesson.skills))],
+    exercises,
+  };
+}
+
+export function isUnitTestPassed(correctCount: number, total: number): boolean {
+  return total > 0 && correctCount / total >= UNIT_TEST_PASS_RATE;
+}
+
+export function isUnitCompleted(user: User, unitId: string): boolean {
+  const unit = getUnit(unitId);
+  if (!unit) return false;
+  const done = new Set(completedLessons(user));
+  return unit.lessons.every((lesson) => done.has(lesson.id));
+}
+
+function nextStreak(u: User, today: string): number {
+  if (!u.last_active || u.last_active === today) return u.streak_days;
+  const diff = (Date.parse(today) - Date.parse(u.last_active)) / 86400000;
+  return diff === 1 ? u.streak_days + 1 : 1;
+}
+
+/**
+ * Validates every lesson in a unit after a passed assessment.
+ * Failed tests and already-completed units leave the profile untouched.
+ */
+export function completeUnitWithTest(
+  u: User,
+  unitId: string,
+  correctCount: number,
+  total: number,
+  today = new Date().toISOString().slice(0, 10),
+): User {
+  const unit = getUnit(unitId);
+  if (!unit || !isUnitTestPassed(correctCount, total) || isUnitCompleted(u, unitId)) return u;
+
+  const previous = new Set(completedLessons(u));
+  const newlyCompleted = unit.lessons.filter((lesson) => !previous.has(lesson.id));
+  if (newlyCompleted.length === 0) return u;
+
+  const completed = new Set(previous);
+  for (const lesson of unit.lessons) completed.add(lesson.id);
+
+  return {
+    ...u,
+    total_xp: u.total_xp + correctCount * XP_PER_CORRECT,
+    streak_days: nextStreak(u, today),
+    last_active: today,
+    lessons_completed: (u.lessons_completed ?? 0) + newlyCompleted.length,
+    completed_lessons: [...completed],
+  };
+}
+
 export function normalize(s: string): string {
   return s.toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9' ]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -404,16 +480,11 @@ export function loseHeart(u: User): User {
 }
 
 export function endSession(u: User, correctCount: number, today = new Date().toISOString().slice(0, 10), lessonId = "l1"): User {
-  let streak = u.streak_days;
-  if (u.last_active && u.last_active !== today) {
-    const diff = (Date.parse(today) - Date.parse(u.last_active)) / 86400000;
-    streak = diff === 1 ? streak + 1 : 1;
-  }
   const completed = Array.from(new Set([...completedLessons(u), lessonId]));
   return {
     ...u,
     total_xp: u.total_xp + correctCount * XP_PER_CORRECT,
-    streak_days: streak,
+    streak_days: nextStreak(u, today),
     last_active: today,
     lessons_completed: (u.lessons_completed ?? 0) + 1,
     completed_lessons: completed,

@@ -21,7 +21,14 @@ const MIC_ERRORS: Record<ListenError, string> = {
   other: "La reconnaissance vocale a échoué. Réessaie ou écris ta réponse ci-dessous.",
 };
 
-export function LessonSession({ lesson }: { lesson: Lesson }) {
+export function LessonSession({
+  lesson,
+  onFinish,
+}: {
+  lesson: Lesson;
+  /** When provided, the caller owns progression and returns whether the assessment passed. */
+  onFinish?: (correctCount: number, total: number) => boolean;
+}) {
   const exercises = lesson.exercises;
   const [user, setUser] = useState<User | null>(null);
   const [index, setIndex] = useState(0);
@@ -35,6 +42,7 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   const [status, setStatus] = useState<Status>("idle");
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [testPassed, setTestPassed] = useState<boolean | null>(null);
   const stopRef = useRef<() => void>(() => {});
 
   const finishedRef = useRef(false);
@@ -92,7 +100,16 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   const next = () => {
     if (index + 1 >= total) {
       // Guard: a double click on "Continuer" must not award XP twice.
-      if (!finishedRef.current) { finishedRef.current = true; update(endSession(loadUser(), correctCount, undefined, lesson.id)); }
+      if (!finishedRef.current) {
+        finishedRef.current = true;
+        if (onFinish) {
+          const passed = onFinish(correctCount, total);
+          setTestPassed(passed);
+          if (passed) setUser(loadUser());
+        } else {
+          update(endSession(loadUser(), correctCount, undefined, lesson.id));
+        }
+      }
       setDone(true);
       return;
     }
@@ -107,20 +124,28 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
         <div className="text-6xl motion-safe:animate-bounce" aria-hidden>🎉</div>
-        <h1 className="text-3xl font-black text-primary">Leçon terminée !</h1>
+        <h1 className="text-3xl font-black text-primary">
+          {onFinish ? (testPassed ? "Unité validée !" : "Test non réussi") : "Leçon terminée !"}
+        </h1>
         <p className="font-bold">{lesson.title}</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <Stat label="Score" value={`${correctCount}/${total}`} cls="border-success text-success" />
-          <Stat label="XP gagnés" value={`+${correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
+          <Stat label="Score" value={`${correctCount}/${total}`} cls={onFinish && !testPassed ? "border-danger text-danger" : "border-success text-success"} />
+          <Stat label="XP gagnés" value={`+${onFinish && !testPassed ? 0 : correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
           <Stat label="XP total" value={`${user.total_xp}`} cls="border-flame text-flame" />
           <Stat label="Série" value={`${user.streak_days} j`} cls="border-flame text-flame" />
         </div>
         <p className="max-w-sm text-muted-foreground">
-          Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués.
+          {onFinish
+            ? testPassed
+              ? "Tu as validé cette unité. Tu peux toujours refaire ses leçons depuis le parcours."
+              : "Il faut au moins 80 % de bonnes réponses. Ta progression et ton XP restent inchangés ; tu peux réessayer."
+            : "Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués."}
         </p>
-        <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
-          Recommencer
-        </button>
+        {(!onFinish || !testPassed) && (
+          <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
+            {onFinish ? "Réessayer le test" : "Recommencer"}
+          </button>
+        )}
         <Link to="/" className="btn-3d w-full max-w-xs border-border bg-background py-3 uppercase text-foreground hover:bg-muted">
           Retour au parcours
         </Link>
@@ -142,8 +167,8 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
       <header className="flex items-center gap-3 py-6 sm:gap-4">
-        <Link to="/" aria-label="Quitter la leçon et revenir au parcours" className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></Link>
-        <div className="relative h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Progression de la leçon" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+        <Link to="/" aria-label={onFinish ? "Quitter le test et revenir au parcours" : "Quitter la leçon et revenir au parcours"} className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></Link>
+        <div className="relative h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={onFinish ? "Progression du test d'unité" : "Progression de la leçon"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
           <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
         </div>
         <span aria-label={`Série : ${user.streak_days} jours`} className="flex shrink-0 items-center gap-1 font-black text-flame"><Flame aria-hidden className="size-5 fill-current" />{user.streak_days}</span>
@@ -152,6 +177,7 @@ export function LessonSession({ lesson }: { lesson: Lesson }) {
       </header>
 
       <main className="flex-1 py-6">
+        {onFinish && <p className="mb-2 text-sm font-extrabold uppercase text-primary">Test de validation · 80 % requis</p>}
         <p className="mb-2 text-sm font-extrabold uppercase text-muted-foreground">{INSTRUCTION[ex.type]}</p>
         <div className="mb-8 flex items-start gap-3">
           <h1 className="min-w-0 flex-1 text-2xl font-black">{ex.question}</h1>

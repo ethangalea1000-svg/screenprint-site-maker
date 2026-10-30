@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Flame, Heart, Lock, Star, Zap } from "lucide-react";
-import { ALL_LESSONS, UNITS, completedLessons, lessonState, loadUser, type User } from "@/lib/lesson";
+import { ALL_LESSONS, UNITS, completedLessons, isUnitCompleted, lessonState, loadUser, type User } from "@/lib/lesson";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -65,6 +65,16 @@ function Home() {
               <p className="text-sm font-extrabold uppercase opacity-90">Unité {ui + 1}</p>
               <h2 className="mt-1 text-2xl font-black">{unit.title}</h2>
               <p className="mt-1 font-bold opacity-90">{unit.goal}</p>
+              {user && !isUnitCompleted(user, unit.id) && (
+                <Link
+                  to="/lecon"
+                  search={{ unit: unit.id }}
+                  aria-label={`Passer le test de l'unité ${ui + 1} : ${unit.title}`}
+                  className="mt-4 inline-flex rounded-xl border-2 border-primary-foreground/50 px-5 py-2 font-extrabold text-primary-foreground underline-offset-4 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-foreground"
+                >
+                  Passer le test
+                </Link>
+              )}
             </div>
             <ol className="flex flex-col items-center gap-4" aria-label={`Parcours de l'unité ${ui + 1}`}>
               {unit.lessons.map((lesson, li) => {

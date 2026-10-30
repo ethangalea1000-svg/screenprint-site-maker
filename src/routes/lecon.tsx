@@ -2,10 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { LessonSession } from "@/components/LessonSession";
-import { ALL_LESSONS, getLesson, lessonState, loadUser, type User } from "@/lib/lesson";
+import { ALL_LESSONS, buildUnitTestLesson, completeUnitWithTest, getLesson, getUnit, lessonState, loadUser, saveUser, type User } from "@/lib/lesson";
+import { canRecognize } from "@/lib/speech";
 
 export const Route = createFileRoute("/lecon")({
-  validateSearch: (s: Record<string, unknown>): { l?: string } => (typeof s["l"] === "string" ? { l: s["l"] } : {}),
+  validateSearch: (s: Record<string, unknown>): { l?: string; unit?: string } => ({
+    ...(typeof s["l"] === "string" ? { l: s["l"] } : {}),
+    ...(typeof s["unit"] === "string" ? { unit: s["unit"] } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Leçon — Langue" },
@@ -20,9 +24,49 @@ export const Route = createFileRoute("/lecon")({
 });
 
 function LessonPage() {
-  const { l } = Route.useSearch();
+  const { l, unit } = Route.useSearch();
   const [user, setUser] = useState<User | null>(null);
   useEffect(() => setUser(loadUser()), []);
+
+  if (unit) {
+    const selectedUnit = getUnit(unit);
+    if (!selectedUnit) {
+      return (
+        <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-4 text-center">
+          <h1 className="text-2xl font-black">Unité introuvable</h1>
+          <p className="text-muted-foreground">Cette unité n'existe pas ou son lien est incorrect.</p>
+          <Link to="/" className="btn-3d border-primary-shade bg-primary px-6 py-3 font-bold text-primary-foreground">Retour au parcours</Link>
+        </main>
+      );
+    }
+    if (!user) {
+      return <main className="mx-auto flex min-h-screen max-w-xl items-center justify-center px-4"><p role="status">Chargement de ta progression…</p></main>;
+    }
+    const testLesson = buildUnitTestLesson(selectedUnit, canRecognize());
+    if (testLesson.exercises.length === 0) {
+      return (
+        <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center gap-4 px-4 text-center">
+          <h1 className="text-2xl font-black">Test indisponible</h1>
+          <p className="text-muted-foreground">Cette unité ne contient pas encore assez d'exercices pour créer un test.</p>
+          <Link to="/" className="btn-3d border-primary-shade bg-primary px-6 py-3 font-bold text-primary-foreground">Retour au parcours</Link>
+        </main>
+      );
+    }
+    return (
+      <LessonSession
+        key={`unit-test-${unit}`}
+        lesson={testLesson}
+        onFinish={(correctCount, total) => {
+          const current = loadUser();
+          const updated = completeUnitWithTest(current, unit, correctCount, total);
+          if (updated === current) return false;
+          saveUser(updated);
+          setUser(updated);
+          return true;
+        }}
+      />
+    );
+  }
 
   const lessonExists = ALL_LESSONS.some((item) => item.id === (l ?? "l1"));
   if (!lessonExists) {
