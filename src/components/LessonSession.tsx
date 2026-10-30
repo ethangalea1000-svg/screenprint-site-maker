@@ -262,7 +262,9 @@ export function LessonSession({
       <footer className={`-mx-4 border-t-2 px-4 py-6 ${status === "correct" ? "border-success bg-success-soft" : status === "wrong" ? "border-danger bg-danger-soft" : "border-border"}`}>
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-start gap-3 font-black" role="status" aria-live="polite">
-            {checked && reviewAudio && <SpeakButton text={reviewAudio} label="Écouter la bonne réponse" />}
+            {checked && reviewAudio && ex.type !== "TYPE" && (
+          <SpeakButton text={reviewAudio} label="Écouter la bonne réponse" />
+        )}
             <div>
               {status === "correct" && <span className="text-xl text-success-shade">{PRAISE[(index + correctCount) % PRAISE.length]}</span>}
               {status === "wrong" && (
@@ -312,3 +314,4 @@ function Stat({ label, value, cls }: { label: string; value: string; cls: string
     </div>
   );
 }
+
