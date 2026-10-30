@@ -141,9 +141,11 @@ export function LessonSession({
               : "Il faut au moins 80 % de bonnes réponses. Ta progression et ton XP restent inchangés ; tu peux réessayer."
             : "Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués."}
         </p>
-        <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
-          {onFinish ? "Réessayer le test" : "Recommencer"}
-        </button>
+        {(!onFinish || !testPassed) && (
+          <button onClick={restart} className="btn-3d w-full max-w-xs border-primary-shade bg-primary py-3 uppercase text-primary-foreground">
+            {onFinish ? "Réessayer le test" : "Recommencer"}
+          </button>
+        )}
         <Link to="/" className="btn-3d w-full max-w-xs border-border bg-background py-3 uppercase text-foreground hover:bg-muted">
           Retour au parcours
         </Link>
@@ -165,8 +167,8 @@ export function LessonSession({
   return (
     <div className="mx-auto flex min-h-screen max-w-2xl flex-col px-4">
       <header className="flex items-center gap-3 py-6 sm:gap-4">
-        <Link to="/" aria-label="Quitter la leçon et revenir au parcours" className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></Link>
-        <div className="relative h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label="Progression de la leçon" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
+        <Link to="/" aria-label={onFinish ? "Quitter le test et revenir au parcours" : "Quitter la leçon et revenir au parcours"} className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-muted"><X /></Link>
+        <div className="relative h-4 min-w-0 flex-1 overflow-hidden rounded-full bg-muted" role="progressbar" aria-label={onFinish ? "Progression du test d'unité" : "Progression de la leçon"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}>
           <div className="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
         </div>
         <span aria-label={`Série : ${user.streak_days} jours`} className="flex shrink-0 items-center gap-1 font-black text-flame"><Flame aria-hidden className="size-5 fill-current" />{user.streak_days}</span>
