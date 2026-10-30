@@ -20,6 +20,9 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm install --no-audit --no-fund --legacy-peer-deps
+      # Match the Nitro version used by the static Pages build; the pinned beta has a Vite 8 static-preset bug.
+      - name: Install Nitro static-build fix
+        run: npm install --no-save --no-audit --no-fund --legacy-peer-deps 'nitro@npm:nitro-nightly@3.0.1-20260820-204949-2b3f1011'
       - name: Run curriculum and unit tests
         run: npm test
       - name: Check lint (advisory until repository formatting is normalized)
