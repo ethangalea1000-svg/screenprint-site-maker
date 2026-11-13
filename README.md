@@ -1,26 +1,48 @@
-# Screenprint Site Maker
+# Langue
 
-Implement exactly the screenshot and nothing else
+Parcours d'anglais en français : 98 leçons réparties en 25 unités, avec QCM,
+phrases à remettre en ordre, écoute, écriture et exercices oraux selon les
+capacités du navigateur.
 
-This project was built with [Lovable](https://lovable.dev).
+**Application autonome :** https://ethangalea1000-svg.github.io/screenprint-site-maker/
 
-**Live app**: https://screenprint-site-maker.lovable.app
+L'ancien lien Lovable peut demander une connexion. Le site GitHub Pages est
+accessible sans compte Lovable.
 
-## Build with Lovable
+## Progression et données
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/3ae40ce9-c603-4cb5-83f1-37ffeb4bdf4c).
+- Un test d'unité réussi à au moins 80 % valide ses leçons.
+- Refaire un test d'une unité déjà validée ne donne pas d'XP supplémentaire.
+- La progression est enregistrée dans le stockage local du navigateur, sur cet
+  appareil et cette origine. Il n'y a pas de synchronisation de compte.
+- Effacer les données du site peut effacer cette progression.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+## Audio et micro
 
-## Development
+La lecture et la reconnaissance vocales utilisent les fonctions du navigateur.
+Le micro demande une autorisation. En cas d'erreur, une réponse écrite permet de
+continuer. Certains navigateurs envoient l'audio à leur propre service de
+reconnaissance ; Langue n'enregistre pas la voix.
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Les tests automatisés du cycle du micro utilisent un simulateur. Ils ne prouvent
+ni la précision de la reconnaissance réelle ni la qualité du son sur un appareil.
+Les mentions A1 à C2 décrivent le classement du contenu, pas une certification.
+
+## Développement
+
+Les workflows utilisent Node.js 24.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm install --no-audit --no-fund --legacy-peer-deps
+npm test
+npx tsc --noEmit
+npx vite build --config vite.pages.config.ts
+npx vite preview --config vite.pages.config.ts
 ```
+
+La construction Pages autonome produit `.output/public`. Le workflow
+`.github/workflows/deploy-pages.yml` publie cette version. Le script `npm run
+build` utilise une autre configuration, avec TanStack Start/Nitro.
+
+Projet initial créé avec [Lovable](https://lovable.dev).
+[Éditeur du projet](https://lovable.dev/projects/3ae40ce9-c603-4cb5-83f1-37ffeb4bdf4c).
