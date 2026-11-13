@@ -55,20 +55,38 @@ export function listen(onDone: (alts: string[]) => void, onError: (e: ListenErro
   if (!Ctor) { onError("unsupported"); return () => {}; }
   const r = new Ctor();
   r.lang = lang; r.interimResults = false; r.maxAlternatives = 3; r.continuous = false;
-  let got = false;
+  // One attempt produces at most one outcome. Intentional stops are silent,
+  // including browser callbacks that arrive after leaving an exercise.
+  let settled = false;
+  const fail = (error: ListenError) => {
+    if (settled) return;
+    settled = true;
+    onError(error);
+  };
   r.onresult = (e) => {
-    got = true;
+    if (settled) return;
     const first = e.results[0];
     const alts: string[] = [];
-    if (first) for (let i = 0; i < first.length; i++) alts.push(first[i]!.transcript);
+    if (first) for (let i = 0; i < first.length; i++) {
+      const transcript = first[i]!.transcript.trim();
+      if (transcript) alts.push(transcript);
+    }
+    if (!alts.length) { fail("no-speech"); return; }
+    settled = true;
     onDone(alts);
   };
   r.onerror = (e) => {
-    got = true;
-    onError(e.error === "not-allowed" || e.error === "service-not-allowed" ? "denied"
+    fail(e.error === "not-allowed" || e.error === "service-not-allowed" ? "denied"
       : e.error === "no-speech" ? "no-speech" : e.error === "network" ? "network" : "other");
   };
-  r.onend = () => { if (!got) onError("no-speech"); };
-  try { r.start(); } catch { onError("other"); }
-  return () => r.abort();
+  r.onend = () => fail("no-speech");
+  try { r.start(); } catch { fail("other"); }
+  let stopped = false;
+  return () => {
+    if (stopped) return;
+    stopped = true;
+    settled = true;
+    r.onresult = null; r.onerror = null; r.onend = null;
+    try { r.abort(); } catch { /* Already stopped by the browser. */ }
+  };
 }
