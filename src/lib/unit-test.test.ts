@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  assessUnitTest,
   DEFAULT_USER,
   UNITS,
   buildUnitTestLesson,
@@ -70,5 +71,39 @@ describe("unit skip assessments", () => {
     expect(second.completed_lessons).toContain("l1");
     expect(second.total_xp).toBe(160);
     expect(second.lessons_completed).toBe(unit.lessons.length);
+  });
+});
+
+
+describe("unit assessment result", () => {
+  it("reports an 80 percent pass and the actual XP awarded", () => {
+    const result = assessUnitTest(DEFAULT_USER, "u1", 4, 5, "2026-11-13");
+    expect(result).toMatchObject({ passed: true, xpGained: 40, alreadyCompleted: false });
+    expect(result.user.total_xp).toBe(40);
+    expect(isUnitCompleted(result.user, "u1")).toBe(true);
+  });
+  it("reports a failed score without granting progress", () => {
+    const result = assessUnitTest(DEFAULT_USER, "u1", 3, 5);
+    expect(result).toEqual({ user: DEFAULT_USER, passed: false, xpGained: 0, alreadyCompleted: false });
+    expect(result.user).toBe(DEFAULT_USER);
+  });
+  it("reports a successful repeat without extra XP or changing existing data", () => {
+    const first = assessUnitTest(DEFAULT_USER, "u1", 5, 5, "2026-11-12");
+    const repeated = assessUnitTest(first.user, "u1", 5, 5, "2026-11-13");
+    expect(repeated).toMatchObject({ passed: true, xpGained: 0, alreadyCompleted: true });
+    expect(repeated.user).toBe(first.user);
+    expect(repeated.user.total_xp).toBe(50);
+    expect(repeated.user.last_active).toBe("2026-11-12");
+  });
+  it("does not call a failed repeat successful just because a unit was completed", () => {
+    const first = assessUnitTest(DEFAULT_USER, "u1", 5, 5);
+    const repeated = assessUnitTest(first.user, "u1", 3, 5);
+    expect(repeated).toMatchObject({ passed: false, xpGained: 0, alreadyCompleted: true });
+    expect(repeated.user).toBe(first.user);
+  });
+  it("does not report an invalid unit as passed", () => {
+    expect(assessUnitTest(DEFAULT_USER, "missing-unit", 5, 5)).toEqual({
+      user: DEFAULT_USER, passed: false, xpGained: 0, alreadyCompleted: false,
+    });
   });
 });
