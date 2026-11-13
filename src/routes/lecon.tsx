@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Lock } from "lucide-react";
 import { LessonSession } from "@/components/LessonSession";
-import { ALL_LESSONS, buildUnitTestLesson, completeUnitWithTest, getLesson, getUnit, lessonState, loadUser, saveUser, type User } from "@/lib/lesson";
+import { ALL_LESSONS, assessUnitTest, buildUnitTestLesson, getLesson, getUnit, lessonState, loadUser, saveUser, type User } from "@/lib/lesson";
 import { canRecognize } from "@/lib/speech";
 
 export const Route = createFileRoute("/lecon")({
@@ -58,11 +58,12 @@ function LessonPage() {
         lesson={testLesson}
         onFinish={(correctCount, total) => {
           const current = loadUser();
-          const updated = completeUnitWithTest(current, unit, correctCount, total);
-          if (updated === current) return false;
-          saveUser(updated);
-          setUser(updated);
-          return true;
+          const result = assessUnitTest(current, unit, correctCount, total);
+          if (result.user !== current) {
+            saveUser(result.user);
+            setUser(result.user);
+          }
+          return result;
         }}
       />
     );
