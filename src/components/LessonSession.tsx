@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Heart, Flame, Zap, X, Mic, Square } from "lucide-react";
+import { Heart, Flame, Zap, X, Mic, Square, Trophy, RotateCcw } from "lucide-react";
 import {
-  MAX_HEARTS, XP_PER_CORRECT, endSession, isCorrect, loadUser, loseHeart, missingWords, saveUser, type Lesson, type User,
+  MAX_HEARTS, XP_PER_CORRECT, endSession, isCorrect, loadUser, loseHeart, missingWords, saveUser, type Lesson, type User, type UnitTestResult,
 } from "@/lib/lesson";
 import { canRecognize, listen, stopSpeaking, type ListenError } from "@/lib/speech";
 import { SpeakButton } from "@/components/SpeakButton";
@@ -26,8 +26,8 @@ export function LessonSession({
   onFinish,
 }: {
   lesson: Lesson;
-  /** When provided, the caller owns progression and returns whether the assessment passed. */
-  onFinish?: (correctCount: number, total: number) => boolean;
+  /** When provided, the caller owns progression and returns the score outcome and actual XP awarded. */
+  onFinish?: (correctCount: number, total: number) => UnitTestResult;
 }) {
   const exercises = lesson.exercises;
   const [user, setUser] = useState<User | null>(null);
@@ -42,7 +42,8 @@ export function LessonSession({
   const [status, setStatus] = useState<Status>("idle");
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
-  const [testPassed, setTestPassed] = useState<boolean | null>(null);
+  const [testResult, setTestResult] = useState<UnitTestResult | null>(null);
+  const testPassed = testResult?.passed ?? false;
   const stopRef = useRef<() => void>(() => {});
 
   const finishedRef = useRef(false);
@@ -103,9 +104,9 @@ export function LessonSession({
       if (!finishedRef.current) {
         finishedRef.current = true;
         if (onFinish) {
-          const passed = onFinish(correctCount, total);
-          setTestPassed(passed);
-          if (passed) setUser(loadUser());
+          const result = onFinish(correctCount, total);
+          setTestResult(result);
+          setUser(loadUser());
         } else {
           update(endSession(loadUser(), correctCount, undefined, lesson.id));
         }
@@ -116,28 +117,32 @@ export function LessonSession({
     setIndex(index + 1); reset();
   };
 
-  const restart = () => { finishedRef.current = false; setIndex(0); reset(); setCorrectCount(0); setDone(false); };
+  const restart = () => { finishedRef.current = false; setIndex(0); reset(); setCorrectCount(0); setTestResult(null); setDone(false); };
 
   if (!user) return <div className="min-h-screen" />;
 
   if (done) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-6 text-center">
-        <div className="text-6xl motion-safe:animate-bounce" aria-hidden>🎉</div>
-        <h1 className="text-3xl font-black text-primary">
+        <div className={onFinish && !testPassed ? "text-danger" : "text-primary"} aria-hidden>
+          {onFinish && !testPassed ? <RotateCcw className="size-16" /> : <Trophy className="size-16 motion-safe:animate-bounce" />}
+        </div>
+        <h1 className={`text-3xl font-black ${onFinish && !testPassed ? "text-danger" : "text-primary"}`}>
           {onFinish ? (testPassed ? "Unité validée !" : "Test non réussi") : "Leçon terminée !"}
         </h1>
         <p className="font-bold">{lesson.title}</p>
         <div className="flex flex-wrap justify-center gap-4">
           <Stat label="Score" value={`${correctCount}/${total}`} cls={onFinish && !testPassed ? "border-danger text-danger" : "border-success text-success"} />
-          <Stat label="XP gagnés" value={`+${onFinish && !testPassed ? 0 : correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
+          <Stat label="XP gagnés" value={`+${onFinish ? (testResult?.xpGained ?? 0) : correctCount * XP_PER_CORRECT}`} cls="border-xp text-xp" />
           <Stat label="XP total" value={`${user.total_xp}`} cls="border-flame text-flame" />
           <Stat label="Série" value={`${user.streak_days} j`} cls="border-flame text-flame" />
         </div>
         <p className="max-w-sm text-muted-foreground">
           {onFinish
             ? testPassed
-              ? "Tu as validé cette unité. Tu peux toujours refaire ses leçons depuis le parcours."
+              ? testResult?.alreadyCompleted
+                ? "Test réussi. Cette unité était déjà validée : aucun XP supplémentaire n'est attribué. Tu peux toujours refaire ses leçons depuis le parcours."
+                : "Tu as validé cette unité. Tu peux toujours refaire ses leçons depuis le parcours."
               : "Il faut au moins 80 % de bonnes réponses. Ta progression et ton XP restent inchangés ; tu peux réessayer."
             : "Reviens demain pour prolonger ta série. Refaire la leçon renforce les mots que tu as manqués."}
         </p>
