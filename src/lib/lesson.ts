@@ -456,6 +456,22 @@ export function completeUnitWithTest(
   };
 }
 
+/** Keep the assessment score separate from whether new progression was awarded. */
+export type UnitTestResult = { passed: boolean; xpGained: number; alreadyCompleted: boolean };
+
+export function assessUnitTest(
+  user: User, unitId: string, correctCount: number, total: number,
+  today = new Date().toISOString().slice(0, 10),
+): UnitTestResult & { user: User } {
+  const updated = completeUnitWithTest(user, unitId, correctCount, total, today);
+  return {
+    user: updated,
+    passed: getUnit(unitId) !== undefined && isUnitTestPassed(correctCount, total),
+    xpGained: updated.total_xp - user.total_xp,
+    alreadyCompleted: isUnitCompleted(user, unitId),
+  };
+}
+
 export function normalize(s: string): string {
   return s.toLowerCase().replace(/[’']/g, "'").replace(/[^a-z0-9' ]/g, " ").replace(/\s+/g, " ").trim();
 }
