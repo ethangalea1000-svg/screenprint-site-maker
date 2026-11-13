@@ -252,7 +252,7 @@ export function LessonSession({
               </div>
             ) : null}
             {micError && <p role="alert" className="font-bold text-danger-shade">{MIC_ERRORS[micError]}</p>}
-            {(!srSupported || micError === "denied" || micError === "network" || micError === "other") && (
+            {(!srSupported || micError !== null) && (
               <label className="block">
                 <span className="mb-1 block text-sm font-extrabold uppercase text-muted-foreground">Réponse écrite (solution de secours)</span>
                 <input value={text} onChange={(e) => typeText(e.target.value)} disabled={checked} autoComplete="off" autoCapitalize="off" spellCheck={false}
