@@ -12,7 +12,7 @@ describe('SpeakButton latest attempt ownership', () => {
   beforeEach(() => {
     (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
     host = document.createElement('div'); document.body.append(host); root = createRoot(host);
-    attempts.length = 0;
+    attempts.length = 0; audio.canSpeak.mockReturnValue(true);
     audio.speak.mockImplementation(() => new Promise<void>((resolve, reject) => attempts.push({ resolve, reject })));
   });
   afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.clearAllMocks(); });
@@ -23,6 +23,16 @@ describe('SpeakButton latest attempt ownership', () => {
     await act(async () => attempts[0].resolve());
     expect(b).toHaveAttribute('aria-busy', 'true');
     await act(async () => attempts[1].resolve());
+    expect(b).toHaveAttribute('aria-busy', 'false');
+  });
+  it('does not remain busy when a new attempt finds audio unavailable', async () => {
+    const b = await renderButton();
+    await act(async () => b.click());
+    audio.canSpeak.mockReturnValue(false);
+    await act(async () => b.click());
+    expect(b).toHaveAttribute('aria-busy', 'false');
+    expect(host.querySelector('[role=alert]')).not.toBeNull();
+    await act(async () => attempts[0].resolve());
     expect(b).toHaveAttribute('aria-busy', 'false');
   });
   it('still reports an error on the current playback', async () => {
