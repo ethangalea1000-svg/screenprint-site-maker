@@ -6,7 +6,13 @@ export function SpeakButton({ text, lang = "en-US", slow = false, label, big = f
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const attempt = useRef(0);
-  useEffect(() => () => { attempt.current += 1; }, []);
+  useEffect(() => {
+    // The same button instance can be reused by the next exercise.
+    attempt.current += 1;
+    setPlaying(false);
+    setError(null);
+    return () => { attempt.current += 1; };
+  }, [text, lang, slow]);
   const play = async () => {
     const current = ++attempt.current;
     setError(null);
