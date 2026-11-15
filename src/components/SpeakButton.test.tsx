@@ -16,6 +16,23 @@ describe('SpeakButton latest attempt ownership', () => {
     audio.speak.mockImplementation(() => new Promise<void>((resolve, reject) => attempts.push({ resolve, reject })));
   });
   afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.clearAllMocks(); });
+  it('clears the previous exercise error when its text changes', async () => {
+    const b = await renderButton();
+    await act(async () => b.click());
+    await act(async () => attempts[0].reject(new Error('previous exercise')));
+    expect(host.querySelector('[role=alert]')).not.toBeNull();
+    await act(async () => root.render(<SpeakButton text='Goodbye' />));
+    expect(host.querySelector('[role=alert]')).toBeNull();
+    expect(host.querySelector('button')).toHaveAttribute('aria-busy', 'false');
+  });
+  it('ignores a pending attempt after changing exercise content', async () => {
+    const b = await renderButton();
+    await act(async () => b.click());
+    await act(async () => root.render(<SpeakButton text='Goodbye' />));
+    expect(host.querySelector('button')).toHaveAttribute('aria-busy', 'false');
+    await act(async () => attempts[0].reject(new Error('old exercise')));
+    expect(host.querySelector('[role=alert]')).toBeNull();
+  });
   it('keeps the second playback busy when the interrupted first attempt completes', async () => {
     const b = await renderButton();
     await clickTwice(b);
