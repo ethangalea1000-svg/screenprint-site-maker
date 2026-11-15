@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Volume2, Snail } from "lucide-react";
 import { canSpeak, speak } from "@/lib/speech";
 
 export function SpeakButton({ text, lang = "en-US", slow = false, label, big = false }: { text: string; lang?: string; slow?: boolean; label?: string; big?: boolean }) {
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const attempt = useRef(0);
+  useEffect(() => () => { attempt.current += 1; }, []);
   const play = async () => {
+    const current = ++attempt.current;
     setError(null);
-    if (!canSpeak()) { setError("La lecture audio n'est pas disponible sur ce navigateur."); return; }
+    if (!canSpeak()) { setPlaying(false); setError("La lecture audio n'est pas disponible sur ce navigateur."); return; }
     setPlaying(true);
     try { await speak(text, { lang, slow }); }
-    catch { setError("Impossible de lire l'audio. Vérifie le son de ton appareil."); }
-    finally { setPlaying(false); }
+    catch { if (current === attempt.current) setError("Impossible de lire l'audio. Vérifie le son de ton appareil."); }
+    finally { if (current === attempt.current) setPlaying(false); }
   };
   const Icon = slow ? Snail : Volume2;
   return (
