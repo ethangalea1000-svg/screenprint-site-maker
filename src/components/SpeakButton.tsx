@@ -10,7 +10,7 @@ export function SpeakButton({ text, lang = "en-US", slow = false, label, big = f
   const play = async () => {
     const current = ++attempt.current;
     setError(null);
-    if (!canSpeak()) { setError("La lecture audio n'est pas disponible sur ce navigateur."); return; }
+    if (!canSpeak()) { setPlaying(false); setError("La lecture audio n'est pas disponible sur ce navigateur."); return; }
     setPlaying(true);
     try { await speak(text, { lang, slow }); }
     catch { if (current === attempt.current) setError("Impossible de lire l'audio. Vérifie le son de ton appareil."); }
